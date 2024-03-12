@@ -8,6 +8,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttribute;
+import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -15,10 +16,8 @@ import net.minecraft.item.ItemSword;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.*;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.ModelLoader;
@@ -27,15 +26,13 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 import static AuraSword.AuraSwordMod.MODID;
 
 public class AuraSword extends ItemSword {
     public static final String TEXTURE_KEY = "texture";
+
     public AuraSword(ToolMaterial material) {
         super(material);
         setRegistryName("aurasword");
@@ -58,7 +55,7 @@ public class AuraSword extends ItemSword {
 
         lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte"));
         lore.appendTag(new NBTTagString(""));
-        lore.appendTag(new NBTTagString("\u00A74Right-Click to \u00A7lActivate Aura!"));
+        lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lActivate Aura!"));
 
         display.setTag("Lore", lore);
         tag.setTag("display", display);
@@ -125,58 +122,91 @@ public class AuraSword extends ItemSword {
     @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         ItemStack itemStack = playerIn.getHeldItem(handIn);
+        if (playerIn.isSneaking()) { // Player MUST be sneaking
+            itemStack = playerIn.getHeldItem(handIn);
 
-        if (!itemStack.hasTagCompound()) {
-            itemStack.setTagCompound(new NBTTagCompound());
-        }
-
-        NBTTagCompound nbt = itemStack.getTagCompound();
-        boolean texture = nbt.getBoolean(TEXTURE_KEY);
-
-        if (!playerIn.getCooldownTracker().hasCooldown(this)) {
-            playerIn.getCooldownTracker().setCooldown(this, 20*5);
-            nbt.setBoolean(TEXTURE_KEY, !texture);
-
-            // Change the lore
-            NBTTagCompound display = nbt.getCompoundTag("display");
-            NBTTagList lore = new NBTTagList();
-
-            String message;
-            if (texture) {
-                lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte"));
-                lore.appendTag(new NBTTagString(""));
-                lore.appendTag(new NBTTagString("\u00A74Right-Click to \u00A7lActivate Aura!"));
-                message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte";
-            } else {
-                lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Active \u00A7c\u00A7kte"));
-                lore.appendTag(new NBTTagString(""));
-                lore.appendTag(new NBTTagString("\u00A74Right-Click to \u00A7lDeactivate Aura!"));
-                message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Activated \u00A7c\u00A7kte";
+            if (!itemStack.hasTagCompound()) {
+                itemStack.setTagCompound(new NBTTagCompound());
             }
 
-            display.setTag("Lore", lore);
-            nbt.setTag("display", display);
+            NBTTagCompound nbt = itemStack.getTagCompound();
+            boolean texture = nbt.getBoolean(TEXTURE_KEY);
 
-            // Send a message to the action bar
+            if (!playerIn.getCooldownTracker().hasCooldown(this)) {
+                playerIn.getCooldownTracker().setCooldown(this, 20 * 5);
+                nbt.setBoolean(TEXTURE_KEY, !texture);
+
+                // Change the lore
+                NBTTagCompound display = nbt.getCompoundTag("display");
+                NBTTagList lore = new NBTTagList();
+
+                String message;
+                if (texture) {
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte"));
+                    lore.appendTag(new NBTTagString(""));
+                    lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lActivate Aura!"));
+                    message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte";
+                } else {
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Active \u00A7c\u00A7kte"));
+                    lore.appendTag(new NBTTagString(""));
+                    lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lDeactivate Aura!"));
+                    message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Activated \u00A7c\u00A7kte";
+                }
+
+                display.setTag("Lore", lore);
+                nbt.setTag("display", display);
+
+                // Send a message to the action bar
+                if (!worldIn.isRemote) {
+                    playerIn.sendStatusMessage(new TextComponentString(message), true);
+                    return new ActionResult<>(EnumActionResult.PASS, itemStack);
+                }
+
+                Random rand = new Random();
+                // The parameters are: particle type, x, y, z, x speed, y speed, z speed
+                if (!texture) {
+                    for (int i = 0; i < 500; i++) { // number of particles andrandom velocity generator between -0.5 and 0.5 for each axis
+                        double velocityX = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionX * 2);
+                        double velocityY = (rand.nextFloat() - 0.5) / 2 + Math.abs(playerIn.motionY / 1.5);
+                        double velocityZ = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionZ * 2);
+
+                        worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1, playerIn.posZ, velocityX, velocityY, velocityZ);
+                    }
+                }
+
+                return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
+            }
+        } else {
+            Vec3d lookVec = playerIn.getLookVec(); // Direction the player is looking in
+
+            // Spawn the particles
+            for (int i = 0; i < 1000; i++) {
+                // Create two vectors that are perpendicular to each other and to the player's look vector
+                Vec3d perpVec1 = new Vec3d(-lookVec.z, 0, lookVec.x).normalize();
+                Vec3d perpVec2 = lookVec.crossProduct(perpVec1).normalize();
+
+                // Generate a random angle
+                double theta = 2.0 * Math.PI * Math.random();
+
+                // Compute the direction of the particle velocity
+                double velocityX = Math.cos(theta) * perpVec1.x + Math.sin(theta) * perpVec2.x;
+                double velocityY = Math.cos(theta) * perpVec1.y + Math.sin(theta) * perpVec2.y;
+                double velocityZ = Math.cos(theta) * perpVec1.z + Math.sin(theta) * perpVec2.z;
+
+                // Spawn the particle
+                worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1.5, playerIn.posZ, velocityX, velocityY, velocityZ);
+            }
+
             if (!worldIn.isRemote) {
-                playerIn.sendStatusMessage(new TextComponentString(message), true);
-                return new ActionResult<>(EnumActionResult.PASS, itemStack);
-            }
-
-            Random rand = new Random();
-            // The parameters are: particle type, x, y, z, x speed, y speed, z speed
-            if (!texture) {
-                for (int i = 0; i < 500; i++) { // number of particles andrandom velocity generator between -0.5 and 0.5 for each axis
-                    double velocityX = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionX * 2);
-                    double velocityY = (rand.nextFloat() - 0.5) / 2 + Math.abs(playerIn.motionY / 1.5);
-                    double velocityZ = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionZ * 2);
-
-                    worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1, playerIn.posZ, velocityX, velocityY, velocityZ);
+                // Damage the enemies
+                List<Entity> entities = worldIn.getEntitiesWithinAABBExcludingEntity(playerIn, playerIn.getEntityBoundingBox().expand(lookVec.x, lookVec.y, lookVec.z).grow(25.0D));
+                for (Entity entity : entities) {
+                    if (entity instanceof IMob) { // Check if the entity is a mob
+                        entity.attackEntityFrom(DamageSource.causePlayerDamage(playerIn), 20.0F); // Damage all mobs within range
+                    }
                 }
             }
-
-            return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
         }
-        return new ActionResult<>(EnumActionResult.FAIL, itemStack);
+        return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
     }
 }
