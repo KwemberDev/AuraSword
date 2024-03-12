@@ -1,6 +1,7 @@
 package AuraSword.items;
 
 import com.google.common.collect.Multimap;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
@@ -25,6 +26,7 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.Nullable;
+import AuraSword.CustomParticle;
 
 import java.util.*;
 
@@ -166,9 +168,9 @@ public class AuraSword extends ItemSword {
                 // The parameters are: particle type, x, y, z, x speed, y speed, z speed
                 if (!texture) {
                     for (int i = 0; i < 500; i++) { // number of particles andrandom velocity generator between -0.5 and 0.5 for each axis
-                        double velocityX = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionX * 2);
+                        double velocityX = (rand.nextFloat() - 0.5) / 3 + playerIn.motionX;
                         double velocityY = (rand.nextFloat() - 0.5) / 2 + Math.abs(playerIn.motionY / 1.5);
-                        double velocityZ = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionZ * 2);
+                        double velocityZ = (rand.nextFloat() - 0.5) / 3 + playerIn.motionZ;
 
                         worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1, playerIn.posZ, velocityX, velocityY, velocityZ);
                     }
@@ -177,36 +179,73 @@ public class AuraSword extends ItemSword {
                 return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
             }
         } else {
-            Vec3d lookVec = playerIn.getLookVec(); // Direction the player is looking in
+            NBTTagCompound nbt = itemStack.getTagCompound();
+            boolean texture = nbt.getBoolean(TEXTURE_KEY);
+            if (!worldIn.isRemote && !playerIn.getCooldownTracker().hasCooldown(this) && texture) {
+                playerIn.getCooldownTracker().setCooldown(this, 20 * 5);
 
-            // Spawn the particles
-            for (int i = 0; i < 1000; i++) {
-                // Create two vectors that are perpendicular to each other and to the player's look vector
-                Vec3d perpVec1 = new Vec3d(-lookVec.z, 0, lookVec.x).normalize();
-                Vec3d perpVec2 = lookVec.crossProduct(perpVec1).normalize();
+                // Spawn particles
+                Vec3d lookVec = playerIn.getLookVec(); // Direction the player is looking in
+                Vec3d worldUpVec = new Vec3d(0, 1, 0); // World's up vector
+                Vec3d rightVec = lookVec.crossProduct(worldUpVec).normalize(); // Right vector is now based on the player's rotation
+                Vec3d upVec = rightVec.crossProduct(lookVec).normalize(); // Up vector is now based on the player's rotation
 
-                // Generate a random angle
-                double theta = 2.0 * Math.PI * Math.random();
+                // Spawn the particles
+                for (int i = 0; i < 1000; i++) {
+                    // Add a small random offset to the position where the particle is spawned
+                    double offsetX = (Math.random() - 0.5) * 15;
+                    double offsetY = (Math.random() - 0.5);
+                    double offsetZ = (Math.random() - 0.5) * 1.5;
 
-                // Compute the direction of the particle velocity
-                double velocityX = Math.cos(theta) * perpVec1.x + Math.sin(theta) * perpVec2.x;
-                double velocityY = Math.cos(theta) * perpVec1.y + Math.sin(theta) * perpVec2.y;
-                double velocityZ = Math.cos(theta) * perpVec1.z + Math.sin(theta) * perpVec2.z;
+                    // Adjust the offset vectors to be relative to the player's look vector and up vector
+                    Vec3d offsetVec = lookVec.scale(offsetZ).add(rightVec.scale(offsetX)).add(upVec.scale(offsetY));
 
-                // Spawn the particle
-                worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1.5, playerIn.posZ, velocityX, velocityY, velocityZ);
-            }
+                    // Spawn the particle in the direction the player is looking
+                    CustomParticle particle = new CustomParticle(worldIn, playerIn, playerIn.posX + offsetVec.x, playerIn.posY + 1.5 + offsetVec.y, playerIn.posZ + offsetVec.z);
+                    Minecraft.getMinecraft().effectRenderer.addEffect(particle);
 
-            if (!worldIn.isRemote) {
-                // Damage the enemies
-                List<Entity> entities = worldIn.getEntitiesWithinAABBExcludingEntity(playerIn, playerIn.getEntityBoundingBox().expand(lookVec.x, lookVec.y, lookVec.z).grow(25.0D));
-                for (Entity entity : entities) {
-                    if (entity instanceof IMob) { // Check if the entity is a mob
-                        entity.attackEntityFrom(DamageSource.causePlayerDamage(playerIn), 20.0F); // Damage all mobs within range
+
+                    offsetX = (Math.random() - 0.5);
+                    offsetY = (Math.random() - 0.5) * 15;
+                    offsetZ = (Math.random() - 0.5) * 1.5;
+
+                    // Adjust the offset vectors to be relative to the player's look vector and up vector
+                    Vec3d offsetVec2 = lookVec.scale(offsetZ).add(rightVec.scale(offsetX)).add(upVec.scale(offsetY));
+
+                    // Spawn the particle in the direction the player is looking
+                    CustomParticle particle2 = new CustomParticle(worldIn, playerIn, playerIn.posX + offsetVec2.x, playerIn.posY + 1.5 + offsetVec2.y, playerIn.posZ + offsetVec2.z);
+                    Minecraft.getMinecraft().effectRenderer.addEffect(particle2);
+
+                    Random rand = new Random();
+                    if (i > 750) {
+                        double velocityX = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionX * 2);
+                        double velocityY = (rand.nextFloat() - 0.5) / 2 + Math.abs(playerIn.motionY / 1.5);
+                        double velocityZ = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionZ * 2);
+
+                        worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1, playerIn.posZ, velocityX, velocityY, velocityZ);
+                    }
+                }
+
+                String message;
+                message = "\u00A7c\u00A7kte\u00A74\u00A7l CROSS-IMPACT! \u00A7c\u00A7kte";
+                // Send a message to the action bar
+                if (!worldIn.isRemote) {
+                    playerIn.sendStatusMessage(new TextComponentString(message), true);
+                    return new ActionResult<>(EnumActionResult.PASS, itemStack);
+                }
+
+                if (!worldIn.isRemote) {
+                    // Damage the enemies
+                    List<Entity> entities = worldIn.getEntitiesWithinAABBExcludingEntity(playerIn, playerIn.getEntityBoundingBox().expand(lookVec.x, lookVec.y, lookVec.z).grow(25.0D));
+                    for (Entity entity : entities) {
+                        if (entity instanceof IMob) { // Check if the entity is a mob
+                            entity.attackEntityFrom(DamageSource.causePlayerDamage(playerIn), 20.0F); // Damage all mobs within range
+                        }
                     }
                 }
             }
+            return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
         }
-        return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
+        return new ActionResult<>(EnumActionResult.FAIL, itemStack);
     }
 }
