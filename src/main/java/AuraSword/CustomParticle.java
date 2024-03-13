@@ -51,7 +51,7 @@ public class CustomParticle extends ParticleFlame {
             activeParticles.remove(this);
         }
         // Only execute the rest of the code every few ticks
-        if (this.particleAge % 5 == 0) { // Change this to control how often the code is executed
+        if (this.particleAge % 4 == 0) { // Change this to control how often the code is executed
             // Define the range within which to check for blocks and entities
             int blockRange = 2;
             double entityRange = 5.0;
@@ -80,29 +80,15 @@ public class CustomParticle extends ParticleFlame {
                             // If the block is not air, not bedrock, and is at or near the surface, set it to air
                             if (!this.world.isAirBlock(pos) && block.getBlockHardness(state, world, pos) > 0.0F && block != Blocks.OBSIDIAN) {
                                 this.world.setBlockToAir(pos);
+                                this.world.createExplosion(sourceEntity, this.posX, this.posY, this.posZ, (float) 1/30, true);
                                 // Destroy this particle
                                 this.setExpired();
-                                // Destroy other particles within a certain range
-                                double particleRange = 5.0; // Change this to your desired range
-                                List<Entity> particles = this.world.getEntitiesWithinAABBExcludingEntity(null, new AxisAlignedBB(
-                                        this.posX - particleRange, this.posY - particleRange, this.posZ - particleRange,
-                                        this.posX + particleRange, this.posY + particleRange, this.posZ + particleRange));
-
-                                for (CustomParticle particle : CustomParticle.activeParticles) {
-                                    double dx2 = particle.posX - this.posX;
-                                    double dy2 = particle.posY - this.posY;
-                                    double dz2 = particle.posZ - this.posZ;
-                                    double distanceSquared = (dx2 * dx2) + (dy2 * dy2) + (dz2 * dz2);
-                                    if (distanceSquared <= particleRange) {
-                                        particle.setExpired();
-                                    }
-                                }
-                                return; // Exit the loop after destroying a block
                             }
                         }
                     }
                 }
             });
+                entities.clear();
         }
     }
     @Override

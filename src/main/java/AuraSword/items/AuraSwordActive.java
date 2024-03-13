@@ -4,14 +4,16 @@ import com.google.common.collect.Multimap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttribute;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.nbt.NBTTagCompound;
@@ -32,13 +34,13 @@ import java.util.*;
 
 import static AuraSword.AuraSwordMod.MODID;
 
-public class AuraSword extends ItemSword {
-    public static final String TEXTURE_KEY = "texture";
+public class AuraSwordActive extends ItemSword {
+    private static final double REACH_DISTANCE = 12.0D; // Set this to your desired reach distance
 
-    public AuraSword(ToolMaterial material) {
+    public AuraSwordActive(Item.ToolMaterial material) {
         super(material);
-        setRegistryName("aurasword");
-        setTranslationKey(MODID + ".aurasword");
+        setRegistryName("auraswordactive");
+        setTranslationKey(MODID + ".auraswordactive");
     }
 
     @Override
@@ -46,23 +48,21 @@ public class AuraSword extends ItemSword {
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }
-
         NBTTagCompound tag = stack.getTagCompound();
-        boolean texture = false; // default state
-        tag.setBoolean(TEXTURE_KEY, texture);
-
         // Set the lore
         NBTTagCompound display = tag.getCompoundTag("display");
         NBTTagList lore = new NBTTagList();
 
-        lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte"));
-        lore.appendTag(new NBTTagString(""));
-        lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lActivate Aura!"));
+        lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l With Its Aura Unleashed, Its True From Has Been Revealed... \u00A7c\u00A7kte"));
 
         display.setTag("Lore", lore);
         tag.setTag("display", display);
 
+        // make item unbreakable
+        tag.setBoolean("Unbreakable", true);
+
         return super.initCapabilities(stack, nbt);
+
     }
 
 
@@ -73,10 +73,6 @@ public class AuraSword extends ItemSword {
         if (slot == EntityEquipmentSlot.MAINHAND) {
             double damageValue = 1.166; // Default damage value
             double attackspeed = 1.25;
-            if (stack.hasTagCompound() && stack.getTagCompound().getBoolean(TEXTURE_KEY)) {
-                damageValue = 2.0; // Damage value when the texture is active
-                attackspeed = 1;
-            }
             replaceModifier(modifiers, SharedMonsterAttributes.ATTACK_DAMAGE, ATTACK_DAMAGE_MODIFIER, damageValue);
             replaceModifier(modifiers, SharedMonsterAttributes.ATTACK_SPEED, ATTACK_SPEED_MODIFIER, attackspeed);
         }
@@ -108,78 +104,29 @@ public class AuraSword extends ItemSword {
 
     @SideOnly(Side.CLIENT)
     public void initModel() {
-        ModelLoader.setCustomMeshDefinition(this, stack -> {
-            if (stack.hasTagCompound() && stack.getTagCompound().getBoolean(TEXTURE_KEY)) {
-                return new ModelResourceLocation(getRegistryName() + "on", "inventory");
-            } else {
-                return new ModelResourceLocation(getRegistryName() + "off", "inventory");
-            }
-        });
-        ModelBakery.registerItemVariants(this,
-                new ModelResourceLocation(getRegistryName() + "on", "inventory"),
-                new ModelResourceLocation(getRegistryName() + "off", "inventory"));
+        ModelLoader.setCustomModelResourceLocation(this, 0, new ModelResourceLocation(getRegistryName(), "inventory"));
     }
 
-    // texture
+    @Override
+    public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected) {
+        if (entityIn instanceof EntityPlayerMP) {
+            EntityPlayerMP player = (EntityPlayerMP) entityIn;
+            if (isSelected) {
+                player.interactionManager.setBlockReachDistance(REACH_DISTANCE);
+                // Send packet to client to update reach distance
+            } else {
+                player.interactionManager.setBlockReachDistance(5.0D); // Reset to default reach distance
+                // Send packet to client to update reach distance
+            }
+        }
+        super.onUpdate(stack, worldIn, entityIn, itemSlot, isSelected);
+    }
+
     @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         ItemStack itemStack = playerIn.getHeldItem(handIn);
-        if (playerIn.isSneaking()) { // Player MUST be sneaking
-            itemStack = playerIn.getHeldItem(handIn);
-
-            if (!itemStack.hasTagCompound()) {
-                itemStack.setTagCompound(new NBTTagCompound());
-            }
-
             NBTTagCompound nbt = itemStack.getTagCompound();
-            boolean texture = nbt.getBoolean(TEXTURE_KEY);
-
-            if (!playerIn.getCooldownTracker().hasCooldown(this)) {
-
-                // Change the lore
-                NBTTagCompound display = nbt.getCompoundTag("display");
-                NBTTagList lore = new NBTTagList();
-
-                String message;
-                if (texture) {
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte"));
-                    lore.appendTag(new NBTTagString(""));
-                    lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lActivate Aura!"));
-                    message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte";
-                } else {
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Active \u00A7c\u00A7kte"));
-                    lore.appendTag(new NBTTagString(""));
-                    lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lDeactivate Aura!"));
-                    message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Activated \u00A7c\u00A7kte";
-                }
-
-                display.setTag("Lore", lore);
-                nbt.setTag("display", display);
-
-                // Send a message to the action bar
-                if (!worldIn.isRemote) {
-                    playerIn.sendStatusMessage(new TextComponentString(message), true);
-                    return new ActionResult<>(EnumActionResult.PASS, itemStack);
-                }
-
-                Random rand = new Random();
-                // The parameters are: particle type, x, y, z, x speed, y speed, z speed
-                if (!texture) {
-                    for (int i = 0; i < 500; i++) { // number of particles andrandom velocity generator between -0.5 and 0.5 for each axis
-                        double velocityX = (rand.nextFloat() - 0.5) / 3 + playerIn.motionX;
-                        double velocityY = (rand.nextFloat() - 0.5) / 2 + Math.abs(playerIn.motionY / 1.5);
-                        double velocityZ = (rand.nextFloat() - 0.5) / 3 + playerIn.motionZ;
-
-                        worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1, playerIn.posZ, velocityX, velocityY, velocityZ);
-                    }
-                }
-
-                return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
-            }
-        } else {
-            NBTTagCompound nbt = itemStack.getTagCompound();
-            boolean texture = nbt.getBoolean(TEXTURE_KEY);
-            if (!worldIn.isRemote && !playerIn.getCooldownTracker().hasCooldown(this) && texture) {
+            if (!worldIn.isRemote && !playerIn.getCooldownTracker().hasCooldown(this)) {
                 playerIn.getCooldownTracker().setCooldown(this, 20 * 5);
 
                 // Spawn particles
@@ -244,6 +191,4 @@ public class AuraSword extends ItemSword {
             }
             return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
         }
-        return new ActionResult<>(EnumActionResult.FAIL, itemStack);
-    }
 }
