@@ -10,11 +10,10 @@
   "type": "forge:ore_shaped",
   "key": {
     "i": {
-      "type": "forge:ore_dict",
-      "ore": "logWood"
+      "item": "aurasword:rootswt"
     },
     "b": {
-      "item": "minecraft:nether_star"
+      "item": "minecraft:beacon"
     }
   }
 }

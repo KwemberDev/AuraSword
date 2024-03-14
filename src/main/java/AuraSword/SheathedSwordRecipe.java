@@ -10,7 +10,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
-public class CustomRecipe implements IRecipe {
+public class SheathedSwordRecipe implements IRecipe {
     @Override
     public boolean matches(InventoryCrafting inv, World worldIn) {
         boolean foundSword = false;

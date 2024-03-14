@@ -1,5 +1,6 @@
 package AuraSword;
 
+import ibxm.Player;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -21,78 +22,95 @@ import net.minecraft.world.World;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class CustomParticle extends ParticleFlame {
+    public UUID sourceEntityUUID;
     private final EntityLivingBase sourceEntity;
     public static List<CustomParticle> activeParticles = new ArrayList<>();
-    public CustomParticle(World worldIn, EntityPlayer playerIn, double posXIn, double posYIn, double posZIn) {
+    public CustomParticle(World worldIn, EntityPlayer playerIn, double posXIn, double posYIn, double posZIn, double speedX, double speedY, double speedZ) {
         super(worldIn, posXIn, posYIn, posZIn, 300, 300, 300);
         this.particleMaxAge = 100; // This will set the lifespan of the particle to 5 seconds (100 ticks)
         this.sourceEntity = playerIn;
-
         // Get the player's look vector
-        Vec3d lookVec = playerIn.getLookVec();
 
         // Set the particle's velocity to the look vector scaled by the desired speed
-        double speed = 2.5; // Change this to your desired speed
-        this.motionX = lookVec.x * speed;
-        this.motionY = lookVec.y * speed;
-        this.motionZ = lookVec.z * speed;
+        this.motionX = speedX;
+        this.motionY = speedY;
+        this.motionZ = speedZ;
         activeParticles.add(this);
+        this.sourceEntityUUID = sourceEntityUUID; // Add this line
     }
 
     // Override this method to change the behavior of your particle
     @Override
     public void onUpdate() {
         super.onUpdate();
-        // If the particle is older than its maximum age, it will be removed
         if (this.particleAge++ >= this.particleMaxAge) {
             this.setExpired();
             activeParticles.remove(this);
         }
-        // Only execute the rest of the code every few ticks
-        if (this.particleAge % 4 == 0) { // Change this to control how often the code is executed
-            // Define the range within which to check for blocks and entities
-            int blockRange = 2;
-            double entityRange = 5.0;
-            // Define the amount of damage to apply
-            float damageAmount = 50.0F; // Change this to your desired damage amount
-                // Check for entities within the defined range
-                List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(null, new AxisAlignedBB(
-                        this.posX - entityRange, this.posY - entityRange, this.posZ - entityRange,
-                        this.posX + entityRange, this.posY + entityRange, this.posZ + entityRange));
+        if (this.particleAge % 4 == 0) {
+            float blockRange = 0.1F;
+            double entityRange = 3.0;
+            float damageAmount = 50.0F;
+            List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(null, new AxisAlignedBB(
+                    this.posX - entityRange, this.posY - entityRange, this.posZ - entityRange,
+                    this.posX + entityRange, this.posY + entityRange, this.posZ + entityRange));
 
-                for (Entity entity : entities) {
-                    // Apply damage to the entity
+            for (Entity entity : entities) {
+                if (entity instanceof EntityLivingBase && entity != sourceEntity) {
                     entity.attackEntityFrom(DamageSource.causeMobDamage(this.sourceEntity), damageAmount);
+                    this.world.createExplosion(sourceEntity, this.posX, this.posY, this.posZ, (float) 1/10, true);
                 }
+            }
 
-            // Schedule a task to be executed in the next game tick
             Minecraft.getMinecraft().addScheduledTask(() -> {
-                // Check for blocks within the defined range
-                for (int dx = -blockRange; dx <= blockRange; dx++) {
-                    for (int dy = -blockRange; dy <= blockRange; dy++) {
-                        for (int dz = -blockRange; dz <= blockRange; dz++) {
+                for (float dx = -blockRange; dx <= blockRange; dx++) {
+                    for (float dy = -blockRange; dy <= blockRange; dy++) {
+                        for (float dz = -blockRange; dz <= blockRange; dz++) {
                             BlockPos pos = new BlockPos(this.posX + dx, this.posY + dy, this.posZ + dz);
                             IBlockState state = this.world.getBlockState(pos);
                             Block block = state.getBlock();
 
-                            // If the block is not air, not bedrock, and is at or near the surface, set it to air
                             if (!this.world.isAirBlock(pos) && block.getBlockHardness(state, world, pos) > 0.0F && block != Blocks.OBSIDIAN) {
-                                this.world.setBlockToAir(pos);
-                                this.world.createExplosion(sourceEntity, this.posX, this.posY, this.posZ, (float) 1/30, true);
-                                // Destroy this particle
+                                this.world.createExplosion(sourceEntity, this.posX, this.posY, this.posZ, (float) 1/10, true);
                                 this.setExpired();
                             }
                         }
                     }
                 }
             });
-                entities.clear();
+            entities.clear();
         }
     }
+
+
     @Override
     public int getFXLayer() {
         return 0; // For particles with the flame texture, this should be 0
+    }
+
+    public double posX() {
+        return this.posX;
+    }
+    public double posY() {
+        return this.posY;
+    }
+    public double posZ() {
+        return this.posZ;
+    }
+
+    public double getSpeedY() {
+        return this.motionY;
+    }
+    public double getSpeedX() {
+        return this.motionX;
+    }
+    public double getSpeedZ() {
+        return this.motionZ;
+    }
+    public UUID getUUID() {
+        return this.sourceEntityUUID;
     }
 }

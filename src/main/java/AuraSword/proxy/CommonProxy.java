@@ -2,7 +2,6 @@ package AuraSword.proxy;
 
 import AuraSword.items.*;
 import net.minecraft.item.Item;
-import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
@@ -13,17 +12,24 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.block.*;
-import AuraSword.CustomRecipe;
+import AuraSword.SheathedSwordRecipe;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import net.minecraftforge.fml.relauncher.Side;
+import AuraSword.PacketParticle;
 
 import static AuraSword.AuraSwordMod.MODID;
 
 @Mod.EventBusSubscriber
 public class CommonProxy {
-    public static Configuration config;
+    public static SimpleNetworkWrapper network;
     public void preInit(FMLPreInitializationEvent e) {
+
     }
 
     public void init(FMLInitializationEvent e) {
+        network = NetworkRegistry.INSTANCE.newSimpleChannel("aurasword");
+        network.registerMessage(PacketParticle.Handler.class, PacketParticle.class, 0, Side.CLIENT);
     }
 
     public void postInit(FMLPostInitializationEvent e) {
@@ -41,12 +47,13 @@ public class CommonProxy {
         event.getRegistry().register(new AuraSwordDefault(Item.ToolMaterial.DIAMOND));
         event.getRegistry().register(new AuraSwordSheathed(Item.ToolMaterial.DIAMOND));
         event.getRegistry().register(new AuraSwordActive(Item.ToolMaterial.DIAMOND));
+        event.getRegistry().register(new Roots());
     }
 
     @SubscribeEvent
     public static void onRegisterRecipesEvent(RegistryEvent.Register<IRecipe> event) {
         event.getRegistry().registerAll(
-                new CustomRecipe().setRegistryName(new ResourceLocation(MODID, "auraswordsheathed"))
+                new SheathedSwordRecipe().setRegistryName(new ResourceLocation(MODID, "auraswordsheathed"))
         );
     }
 }

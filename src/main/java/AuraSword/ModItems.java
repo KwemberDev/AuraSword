@@ -11,14 +11,14 @@ public class ModItems {
     public static AuraSword auraSword;
     @GameRegistry.ObjectHolder("AuraSword:Sheath")
     public static Sheath sheath;
-
     @GameRegistry.ObjectHolder("AuraSword:AuraSwordSheathed")
     public static AuraSwordSheathed auraSwordSheathed;
     @GameRegistry.ObjectHolder("AuraSword:AuraSwordDefault")
     public static AuraSwordDefault auraSwordDefault;
     @GameRegistry.ObjectHolder("AuraSword:AuraSwordActive")
     public static AuraSwordActive auraSwordActive;
-
+    @GameRegistry.ObjectHolder("AuraSword:Rootswt")
+    public static Roots roots;
     @SideOnly(Side.CLIENT)
     public static void initModels() {
         auraSword.initModel();
@@ -26,6 +26,7 @@ public class ModItems {
         auraSwordSheathed.initModel();
         auraSwordDefault.initModel();
         auraSwordActive.initModel();
+        roots.initModel();
     }
 
 }
