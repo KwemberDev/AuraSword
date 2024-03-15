@@ -2,7 +2,6 @@ package AuraSword.items;
 
 import AuraSword.proxy.CommonProxy;
 import com.google.common.collect.Multimap;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import AuraSword.PacketParticle;
@@ -19,7 +18,6 @@ import net.minecraft.item.ItemSword;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraft.network.Packet;
 import net.minecraft.util.*;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
@@ -29,7 +27,6 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import AuraSword.CustomParticle;
 import AuraSword.*;
@@ -198,6 +195,7 @@ public class AuraSword extends ItemSword {
                 // Spawn the particles
                 List<CustomParticle> particles = new ArrayList<>();
                 for (int i = 0; i < 150; i++) {
+                    Vec3d offsetVec;
 
                     // Add a small random offset to the position where the particle is spawned
                     double offsetX = (Math.random() - 0.5) * 15;
@@ -205,7 +203,7 @@ public class AuraSword extends ItemSword {
                     double offsetZ = (Math.random() - 0.5) * 1.5;
 
                     // Adjust the offset vectors to be relative to the player's look vector and up vector
-                    Vec3d offsetVec = lookVec.scale(offsetZ).add(rightVec.scale(offsetX)).add(upVec.scale(offsetY));
+                    offsetVec = lookVec.scale(offsetZ).add(rightVec.scale(offsetX)).add(upVec.scale(offsetY));
 
                     // Spawn the particle in the direction the player is looking
                     CustomParticle particle = new CustomParticle(worldIn, playerIn, playerIn.posX + offsetVec.x, playerIn.posY + 1.5 + offsetVec.y, playerIn.posZ + offsetVec.z, lookVec.x * 4, lookVec.y * 4, lookVec.z * 4);
@@ -223,7 +221,10 @@ public class AuraSword extends ItemSword {
                     particles.add(particle2);
                 }
                 PacketParticle packet = new PacketParticle(particles);
-                if (!worldIn.isRemote &&FMLCommonHandler.instance() != null && FMLCommonHandler.instance().getMinecraftServerInstance() != null && FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList() != null && CommonProxy.network != null) {
+                DamageEntity damageEntity = new DamageEntity(worldIn, lookVec.scale(2.0));
+                damageEntity.setPosition(playerIn.posX, playerIn.posY + 1.5, playerIn.posZ);
+                worldIn.spawnEntity(damageEntity);
+                if (!worldIn.isRemote && FMLCommonHandler.instance() != null && FMLCommonHandler.instance().getMinecraftServerInstance() != null && FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList() != null && CommonProxy.network != null) {
                     for (EntityPlayerMP player : FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayers()) {
                         CommonProxy.network.sendTo(packet, player);
                     }

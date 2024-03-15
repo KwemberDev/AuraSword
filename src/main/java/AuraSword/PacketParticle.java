@@ -19,14 +19,13 @@ import java.util.stream.Collectors;
 
 public class PacketParticle implements IMessage {
     private List<ParticleData> particles;
-
     public PacketParticle() {
         this.particles = new ArrayList<>();
     }
 
     public PacketParticle(List<CustomParticle> particles) {
         this.particles = particles.stream()
-                .map(p -> new ParticleData(p.posX(), p.posY(), p.posZ(), p.getSpeedX(), p.getSpeedY(), p.getSpeedZ(), p.getUUID())) // Modify this line
+                .map(p -> new ParticleData(p.posX(), p.posY(), p.posZ(), p.getSpeedX(), p.getSpeedY(), p.getSpeedZ()))
                 .collect(Collectors.toList());
     }
 
@@ -40,8 +39,6 @@ public class PacketParticle implements IMessage {
             buf.writeDouble(particle.speedX);
             buf.writeDouble(particle.speedY);
             buf.writeDouble(particle.speedZ);
-            PacketBuffer packetBuffer = new PacketBuffer(buf);
-            packetBuffer.writeUniqueId(particle.sourceEntityUUID);
         }
     }
 
@@ -55,10 +52,7 @@ public class PacketParticle implements IMessage {
             double speedX = buf.readDouble();
             double speedY = buf.readDouble();
             double speedZ = buf.readDouble();
-            PacketBuffer packetBuffer = new PacketBuffer(buf);
-            UUID sourceEntityUUID = packetBuffer.readUniqueId();
-            particles.add(new ParticleData(x, y, z, speedX, speedY, speedZ, sourceEntityUUID));
-
+            particles.add(new ParticleData(x, y, z, speedX, speedY, speedZ));
         }
     }
 
@@ -71,34 +65,29 @@ public class PacketParticle implements IMessage {
         public IMessage onMessage(PacketParticle message, MessageContext ctx) {
             Minecraft.getMinecraft().addScheduledTask(() -> {
                 World world = Minecraft.getMinecraft().world;
+                EntityPlayer player = Minecraft.getMinecraft().player; // Get the player
 
                 for (ParticleData particle : message.getParticles()) {
-                    EntityPlayer sourceEntity = world.getPlayerEntityByUUID(particle.sourceEntityUUID);
-                    if (sourceEntity != null) {
-                        CustomParticle newParticle = new CustomParticle(world, sourceEntity, particle.x, particle.y, particle.z, particle.speedX, particle.speedY, particle.speedZ); // Modify this line
-                        Minecraft.getMinecraft().effectRenderer.addEffect(newParticle);
-                    }
+                    CustomParticle newParticle = new CustomParticle(world, player, particle.x, particle.y, particle.z, particle.speedX, particle.speedY, particle.speedZ);
+                    Minecraft.getMinecraft().effectRenderer.addEffect(newParticle);
                 }
             });
             return null;
         }
     }
 
-
     public static class ParticleData {
         public double x, y, z;
         public double speedX, speedY, speedZ;
-        public UUID sourceEntityUUID; // Add this line
 
-        public ParticleData(double x, double y, double z, double speedX, double speedY, double speedZ, UUID sourceEntityUUID) { // Modify this line
+        public ParticleData(double x, double y, double z, double speedX, double speedY, double speedZ) {
             this.x = x;
             this.y = y;
             this.z = z;
             this.speedX = speedX;
             this.speedY = speedY;
             this.speedZ = speedZ;
-            this.sourceEntityUUID = sourceEntityUUID; // Add this line
         }
     }
-}
 
+}

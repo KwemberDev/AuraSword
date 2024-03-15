@@ -38,8 +38,7 @@ public class CustomParticle extends ParticleFlame {
         this.motionX = speedX;
         this.motionY = speedY;
         this.motionZ = speedZ;
-        activeParticles.add(this);
-        this.sourceEntityUUID = sourceEntityUUID; // Add this line
+        activeParticles.add(this);// Add this line
     }
 
     // Override this method to change the behavior of your particle
@@ -57,7 +56,6 @@ public class CustomParticle extends ParticleFlame {
             List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(null, new AxisAlignedBB(
                     this.posX - entityRange, this.posY - entityRange, this.posZ - entityRange,
                     this.posX + entityRange, this.posY + entityRange, this.posZ + entityRange));
-
             for (Entity entity : entities) {
                 if (entity instanceof EntityLivingBase && entity != sourceEntity) {
                     entity.attackEntityFrom(DamageSource.causeMobDamage(this.sourceEntity), damageAmount);
@@ -74,8 +72,7 @@ public class CustomParticle extends ParticleFlame {
                             Block block = state.getBlock();
 
                             if (!this.world.isAirBlock(pos) && block.getBlockHardness(state, world, pos) > 0.0F && block != Blocks.OBSIDIAN) {
-                                this.world.createExplosion(sourceEntity, this.posX, this.posY, this.posZ, (float) 1/10, true);
-                                this.setExpired();
+                                this.world.createExplosion(sourceEntity, this.posX, this.posY, this.posZ, (float) 1/10, false);
                             }
                         }
                     }
@@ -84,8 +81,6 @@ public class CustomParticle extends ParticleFlame {
             entities.clear();
         }
     }
-
-
     @Override
     public int getFXLayer() {
         return 0; // For particles with the flame texture, this should be 0
