@@ -1,4 +1,5 @@
 item.aurasword.aurasword.name=§cGigant
-item.aurasword.aurasworddefault.name=§cGigant
-item.aurasword.auraswordsheathed.name=§cGigant
-item.aurasword.aurasword.name=§cGigant
+item.aurasword.aurasworddefault.name=§cDormant Gigant
+item.aurasword.auraswordactive.name=§cAwakened Gigant
+effect.aura=§cFighting Spirit
+effect.auradeprevation=§5Aura Deprevation

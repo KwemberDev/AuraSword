@@ -96,8 +96,15 @@
             boolean texture = nbt.getBoolean(TEXTURE_KEY);
 
             if (!playerIn.getCooldownTracker().hasCooldown(this)) {
-                playerIn.getCooldownTracker().setCooldown(this, 20 * 5);
+                playerIn.getCooldownTracker().setCooldown(this, 10);
                 nbt.setBoolean(TEXTURE_KEY, !texture);
+                if (!texture) {
+                    duracount = itemStack.getItemDamage();
+                    itemStack.setItemDamage(0);
+                }
+                if (texture) {
+                    itemStack.setItemDamage(duracount); // Reset the item's durability
+                }
 
                 // Change the lore
                 NBTTagCompound display = nbt.getCompoundTag("display");
@@ -105,14 +112,15 @@
 
                 String message;
                 if (texture) {
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte"));
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Sheathed in the Roots of the World Tree \u00A7c\u00A7kte"));
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l This Sword Continuously Absorbs Aura.... \u00A7c\u00A7kte"));
                     lore.appendTag(new NBTTagString(""));
-                    lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lActivate Aura!"));
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74 Sneak + Right-Click to \u00A7lActivate Aura! \u00A7c\u00A7kte"));
                     message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte";
                 } else {
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Aura Active \u00A7c\u00A7kte"));
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l With Its Aura Unleashed, Its True From Has Been Revealed... \u00A7c\u00A7kte"));
                     lore.appendTag(new NBTTagString(""));
-                    lore.appendTag(new NBTTagString("\u00A74Sneak + Right-Click to \u00A7lDeactivate Aura!"));
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74 Sneak + Right-Click to \u00A7lDeactivate Aura! \u00A7c\u00A7kte"));
                     message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Activated \u00A7c\u00A7kte";
                 }
 
@@ -139,54 +147,70 @@
 
                 return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
             }
-        } else {
+        }
+        else {
             NBTTagCompound nbt = itemStack.getTagCompound();
             boolean texture = nbt.getBoolean(TEXTURE_KEY);
-            if (!worldIn.isRemote && !playerIn.getCooldownTracker().hasCooldown(this) && texture) {
-                playerIn.getCooldownTracker().setCooldown(this, 20 * 5);
+            if (!playerIn.getCooldownTracker().hasCooldown(this) && texture) {
+                playerIn.getCooldownTracker().setCooldown(this, 10);
 
-                // Spawn particles
+                Random rand = new Random();
+                // The parameters are: particle type, x, y, z, x speed, y speed, z speed
+                    for (int i = 0; i < 100; i++) { // number of particles andrandom velocity generator between -0.5 and 0.5 for each axis
+                        double velocityX = (rand.nextFloat() - 0.5) / 3 + playerIn.motionX;
+                        double velocityY = (rand.nextFloat() - 0.5) / 2 + Math.abs(playerIn.motionY / 1.5);
+                        double velocityZ = (rand.nextFloat() - 0.5) / 3 + playerIn.motionZ;
+
+                        worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1, playerIn.posZ, velocityX, velocityY, velocityZ);
+                    }
+
+
+
                 Vec3d lookVec = playerIn.getLookVec(); // Direction the player is looking in
                 Vec3d worldUpVec = new Vec3d(0, 1, 0); // World's up vector
-                Vec3d rightVec = lookVec.crossProduct(worldUpVec).normalize(); // Right vector is now based on the player's rotation
-                Vec3d upVec = rightVec.crossProduct(lookVec).normalize(); // Up vector is now based on the player's rotation
+                Vec3d rightVec = lookVec.crossProduct(worldUpVec).normalize(); // Right vector is based on the player's rotation
+                Vec3d upVec = rightVec.crossProduct(lookVec).normalize(); // Up vector is  based on the player's rotation
 
                 // Spawn the particles
-                for (int i = 0; i < 1000; i++) {
+                List<CustomParticle> particles = new ArrayList<>();
+                List<CustomParticle2> particles2 = new ArrayList<>();
+                for (int i = 0; i < 1; i++) {
+                    Vec3d offsetVec;
+
                     // Add a small random offset to the position where the particle is spawned
-                    double offsetX = (Math.random() - 0.5) * 15;
-                    double offsetY = (Math.random() - 0.5);
-                    double offsetZ = (Math.random() - 0.5) * 1.5;
+                    double offsetX = 0;
+                    double offsetY = 0;
+                    double offsetZ = 0;
 
                     // Adjust the offset vectors to be relative to the player's look vector and up vector
-                    Vec3d offsetVec = lookVec.scale(offsetZ).add(rightVec.scale(offsetX)).add(upVec.scale(offsetY));
+                    offsetVec = lookVec.scale(offsetZ).add(rightVec.scale(offsetX)).add(upVec.scale(offsetY));
 
                     // Spawn the particle in the direction the player is looking
-                    CustomParticle particle = new CustomParticle(worldIn, playerIn, playerIn.posX + offsetVec.x, playerIn.posY + 1.5 + offsetVec.y, playerIn.posZ + offsetVec.z);
-                    Minecraft.getMinecraft().effectRenderer.addEffect(particle);
+                    CustomParticle particle = new CustomParticle(worldIn, playerIn, playerIn.posX + offsetVec.x, playerIn.posY + 1.5 + offsetVec.y, playerIn.posZ + offsetVec.z, lookVec.x * 3, lookVec.y * 3, lookVec.z * 3, EnumParticleTypes.FLAME);
+                    particles.add(particle);
 
-
-                    offsetX = (Math.random() - 0.5);
-                    offsetY = (Math.random() - 0.5) * 15;
-                    offsetZ = (Math.random() - 0.5) * 1.5;
+                    offsetX = 0;
+                    offsetY = 0.3;
+                    offsetZ = 0;
 
                     // Adjust the offset vectors to be relative to the player's look vector and up vector
                     Vec3d offsetVec2 = lookVec.scale(offsetZ).add(rightVec.scale(offsetX)).add(upVec.scale(offsetY));
 
                     // Spawn the particle in the direction the player is looking
-                    CustomParticle particle2 = new CustomParticle(worldIn, playerIn, playerIn.posX + offsetVec2.x, playerIn.posY + 1.5 + offsetVec2.y, playerIn.posZ + offsetVec2.z);
-                    Minecraft.getMinecraft().effectRenderer.addEffect(particle2);
-
-                    Random rand = new Random();
-                    if (i > 750) {
-                        double velocityX = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionX * 2);
-                        double velocityY = (rand.nextFloat() - 0.5) / 2 + Math.abs(playerIn.motionY / 1.5);
-                        double velocityZ = (rand.nextFloat() - 0.5) / 3 + (playerIn.motionZ * 2);
-
-                        worldIn.spawnParticle(EnumParticleTypes.FLAME, playerIn.posX, playerIn.posY + 1, playerIn.posZ, velocityX, velocityY, velocityZ);
+                    CustomParticle2 particle2 = new CustomParticle2(worldIn, playerIn, playerIn.posX + offsetVec2.x, playerIn.posY + 1.5 + offsetVec2.y, playerIn.posZ + offsetVec2.z,  lookVec.x * 3, lookVec.y * 3, lookVec.z * 3, EnumParticleTypes.FLAME);
+                    particles2.add(particle2);
+                }
+                PacketParticle packet = new PacketParticle(particles);
+                PacketParticle2 packet2 = new PacketParticle2(particles2);
+                DamageEntity damageEntity = new DamageEntity(worldIn, lookVec.scale(2.0), playerIn);
+                damageEntity.setPosition(playerIn.posX, playerIn.posY + 1.5, playerIn.posZ);
+                worldIn.spawnEntity(damageEntity);
+                if (!worldIn.isRemote && FMLCommonHandler.instance() != null && FMLCommonHandler.instance().getMinecraftServerInstance() != null && FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList() != null && CommonProxy.network != null) {
+                    for (EntityPlayerMP player : FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayers()) {
+                        CommonProxy.network.sendTo(packet, player);
+                        CommonProxy.network.sendTo(packet2, player);
                     }
                 }
-
                 String message;
                 message = "\u00A7c\u00A7kte\u00A74\u00A7l CROSS-IMPACT! \u00A7c\u00A7kte";
                 // Send a message to the action bar
@@ -209,3 +233,4 @@
         }
         return new ActionResult<>(EnumActionResult.FAIL, itemStack);
     }
+}

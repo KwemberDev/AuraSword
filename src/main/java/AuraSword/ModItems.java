@@ -7,12 +7,12 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ModItems {
 
-    @GameRegistry.ObjectHolder("AuraSword:AuraSword")
-    public static AuraSword auraSword;
+//    @GameRegistry.ObjectHolder("AuraSword:AuraSword")
+//    public static AuraSword auraSword;
     @GameRegistry.ObjectHolder("AuraSword:Sheath")
     public static Sheath sheath;
-    @GameRegistry.ObjectHolder("AuraSword:AuraSwordSheathed")
-    public static AuraSwordSheathed auraSwordSheathed;
+//    @GameRegistry.ObjectHolder("AuraSword:AuraSwordSheathed")
+//    public static AuraSwordSheathed auraSwordSheathed;
     @GameRegistry.ObjectHolder("AuraSword:AuraSwordDefault")
     public static AuraSwordDefault auraSwordDefault;
     @GameRegistry.ObjectHolder("AuraSword:AuraSwordActive")
@@ -21,9 +21,9 @@ public class ModItems {
     public static Roots roots;
     @SideOnly(Side.CLIENT)
     public static void initModels() {
-        auraSword.initModel();
+//        auraSword.initModel();
         sheath.initModel();
-        auraSwordSheathed.initModel();
+//        auraSwordSheathed.initModel();
         auraSwordDefault.initModel();
         auraSwordActive.initModel();
         roots.initModel();

@@ -36,7 +36,7 @@ public class SheathedSwordRecipe implements IRecipe {
 
     @Override
     public ItemStack getCraftingResult(InventoryCrafting inv) {
-        ItemStack result = new ItemStack(ModItems.auraSwordSheathed);
+        ItemStack result = new ItemStack(ModItems.auraSwordActive);
         NBTTagCompound tag = result.getTagCompound();
         if (tag == null) {
             tag = new NBTTagCompound();
@@ -53,7 +53,7 @@ public class SheathedSwordRecipe implements IRecipe {
 
     @Override
     public ItemStack getRecipeOutput() {
-        return new ItemStack(ModItems.auraSwordSheathed);
+        return new ItemStack(ModItems.auraSwordActive);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class SheathedSwordRecipe implements IRecipe {
     @Nullable
     @Override
     public ResourceLocation getRegistryName() {
-        return new ResourceLocation("aurasword", "auraswordsheathed");
+        return new ResourceLocation("aurasword", "auraswordactive");
     }
 
     @Override
