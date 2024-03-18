@@ -29,4 +29,7 @@ bin/
 .DS_Store
 
 run/
-
+/build
+.gradle
+.idea
+/gradle
