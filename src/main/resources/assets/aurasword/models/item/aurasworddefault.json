@@ -38,6 +38,23 @@
         1.2
       ]
     },
+    "gui": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.05,
+        1.05,
+        1.05
+      ]
+    },
     "thirdperson_righthand": {
       "rotation": [
         0,

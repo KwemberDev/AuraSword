@@ -21,7 +21,7 @@ public class AuraSwordMod {
     // create the mod info data
     public static final String MODID = "aurasword";
     public static final String MODNAME = "AuraSword Mod";
-    public static final String MODVERSION= "Alpha 0.0.4";
+    public static final String MODVERSION= "Alpha 0.0.5";
 
 
 

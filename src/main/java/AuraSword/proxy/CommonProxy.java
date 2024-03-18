@@ -9,6 +9,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -29,8 +30,10 @@ import static AuraSword.AuraSwordMod.MODID;
 
 @Mod.EventBusSubscriber
 public abstract class CommonProxy {
-    public static final Potion AURA = new Aura(false, 3694022).setPotionName("effect.aura");
-    public static final Potion AURASHORT = new Aura(false, 3694022).setPotionName("effect.auradeprevation");
+    // aurashatter sound for falling out of fighting spirit buff
+    public static SoundEvent aurashatter;
+    public static Potion AURA;
+    public static Potion AURASHORT;
     public static Configuration config;
     public static SimpleNetworkWrapper network;
     public void preInit(FMLPreInitializationEvent e) {
@@ -60,8 +63,8 @@ public abstract class CommonProxy {
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
         event.getRegistry().register(new Sheath());
-        event.getRegistry().register(new AuraSwordDefault(Item.ToolMaterial.DIAMOND));
-        event.getRegistry().register(new AuraSwordActive(Item.ToolMaterial.DIAMOND));
+        event.getRegistry().register(new AuraSwordDefault(Item.ToolMaterial.DIAMOND, 2000));
+        event.getRegistry().register(new AuraSwordActive(Item.ToolMaterial.DIAMOND, 3000));
         event.getRegistry().register(new Roots());
     }
 
@@ -77,9 +80,14 @@ public abstract class CommonProxy {
 
     @SubscribeEvent
     public static void onRegisterPotions(RegistryEvent.Register<Potion> event) {
-        event.getRegistry().registerAll(
-                new Aura(false, 3694022).setRegistryName("auraeffect"),
-                new AuraShortage(false, 3694022).setRegistryName("aurashortage")
-        );
+        AURA = new Aura(false, 3694022).setRegistryName("fightingspirit");
+        AURASHORT = new AuraShortage(true, 3694022).setRegistryName("aurashortage");
+        event.getRegistry().registerAll(AURA, AURASHORT);
+    }
+
+    @SubscribeEvent
+    public static void onSoundEventRegistration(final RegistryEvent.Register<SoundEvent> event) {
+        aurashatter = new SoundEvent(new ResourceLocation("aurasword", "aurashatter")).setRegistryName("aurashatter");
+        event.getRegistry().register(aurashatter);
     }
 }

@@ -1,0 +1,11 @@
+{
+  "aurashatter": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "aurasword:aurashatter",
+        "stream": true
+      }
+    ]
+  }
+}

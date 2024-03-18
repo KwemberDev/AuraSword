@@ -30,12 +30,18 @@ import java.util.UUID;
 import static AuraSword.AuraSwordMod.MODID;
 
 public class AuraSwordDefault extends ItemSword {
-    private static final double REACH_DISTANCE = 12.0D; // Set this to your desired reach distance
+    private int durability;
 
-    public AuraSwordDefault(Item.ToolMaterial material) {
+    public AuraSwordDefault(Item.ToolMaterial material, int durability) {
         super(material);
+        this.durability = durability;
         setRegistryName("aurasworddefault");
         setTranslationKey(MODID + ".aurasworddefault");
+    }
+
+    @Override
+    public int getMaxDamage(ItemStack stack) {
+        return durability;
     }
 
     @Override
@@ -100,20 +106,5 @@ public class AuraSwordDefault extends ItemSword {
     @SideOnly(Side.CLIENT)
     public void initModel() {
         ModelLoader.setCustomModelResourceLocation(this, 0, new ModelResourceLocation(getRegistryName(), "inventory"));
-    }
-
-    @Override
-    public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected) {
-        if (entityIn instanceof EntityPlayerMP) {
-            EntityPlayerMP player = (EntityPlayerMP) entityIn;
-            if (isSelected) {
-                player.interactionManager.setBlockReachDistance(REACH_DISTANCE);
-                // Send packet to client to update reach distance
-            } else {
-                player.interactionManager.setBlockReachDistance(5.0D); // Reset to default reach distance
-                // Send packet to client to update reach distance
-            }
-        }
-        super.onUpdate(stack, worldIn, entityIn, itemSlot, isSelected);
     }
 }

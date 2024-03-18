@@ -40,17 +40,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 import static AuraSword.AuraSwordMod.MODID;
-import static AuraSword.proxy.CommonProxy.AURA;
-import static AuraSword.proxy.CommonProxy.AURASHORT;
+import static AuraSword.proxy.CommonProxy.*;
 
 public class AuraSwordActive extends ItemSword {
-    int tickcount = 0;
-    int duracount = 0;
+    private int durability;
     public static final String TEXTURE_KEY = "texture";
     public boolean didattack = false;
 
-    public AuraSwordActive(Item.ToolMaterial material) {
+    public AuraSwordActive(Item.ToolMaterial material, int durability) {
         super(material);
+        this.durability = durability;
         setRegistryName("auraswordactive");
         setTranslationKey(MODID + ".auraswordactive");
     }
@@ -148,14 +147,39 @@ public class AuraSwordActive extends ItemSword {
 
     @Override
     public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected) {
+        String message;
         if (entityIn instanceof EntityPlayer) {
             EntityPlayer playerIn = (EntityPlayer) entityIn;
             NBTTagCompound nbt = stack.getTagCompound();
+
+            // Change the lore
+            NBTTagCompound display = nbt.getCompoundTag("display");
+            NBTTagList lore = new NBTTagList();
+            if (!nbt.getBoolean(TEXTURE_KEY)) {
+                lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Sheathed in the Roots of the World Tree \u00A7c\u00A7kte"));
+                lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l This Sword Continuously Absorbs Aura.... \u00A7c\u00A7kte"));
+                if (!playerIn.isPotionActive(AURASHORT)) {
+                    lore.appendTag(new NBTTagString(""));
+                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74 Sneak + Right-Click to \u00A7lActivate Aura! \u00A7c\u00A7kte"));
+                }
+            } else {
+                lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l With Its Aura Unleashed, Its True From Has Been Revealed... \u00A7c\u00A7kte"));
+            }
+
+            display.setTag("Lore", lore);
+            nbt.setTag("display", display);
+
             if (nbt != null && nbt.getBoolean(TEXTURE_KEY)) {
                 // Check if the player has the custom effect
                 if (!playerIn.isPotionActive(AURA)) {
                     nbt.setBoolean(TEXTURE_KEY, false);
-                    playerIn.addPotionEffect(new PotionEffect(AURASHORT, 600));
+                    playerIn.addPotionEffect(new PotionEffect(AURASHORT, 2400));
+                    message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte";
+                    playerIn.world.playSound(null, playerIn.posX, playerIn.posY, playerIn.posZ, aurashatter, SoundCategory.PLAYERS, 1.0F, 1.0F);
+                    if (!worldIn.isRemote) {
+                        playerIn.sendStatusMessage(new TextComponentString(message), true);
+                        new ActionResult<>(EnumActionResult.PASS, stack);
+                    }
                 }
             }
         }
@@ -176,7 +200,7 @@ public class AuraSwordActive extends ItemSword {
             boolean texture = nbt.getBoolean(TEXTURE_KEY);
 
             if (!playerIn.getCooldownTracker().hasCooldown(this) && !playerIn.isPotionActive(AURASHORT) && !playerIn.isPotionActive(AURA)) {
-                playerIn.getCooldownTracker().setCooldown(this, 20);
+                playerIn.getCooldownTracker().setCooldown(this, 40);
                 if (!playerIn.isPotionActive(AURA)) {
                     playerIn.addPotionEffect(new PotionEffect(AURA, 600));
                 }
@@ -186,17 +210,8 @@ public class AuraSwordActive extends ItemSword {
                 NBTTagCompound display = nbt.getCompoundTag("display");
                 NBTTagList lore = new NBTTagList();
 
-                String message;
-                if (texture) {
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l Sheathed in the Roots of the World Tree \u00A7c\u00A7kte"));
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l This Sword Continuously Absorbs Aura.... \u00A7c\u00A7kte"));
-                    lore.appendTag(new NBTTagString(""));
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74 Sneak + Right-Click to \u00A7lActivate Aura! \u00A7c\u00A7kte"));
-                    message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Not Active \u00A7c\u00A7kte";
-                } else {
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74\u00A7l With Its Aura Unleashed, Its True From Has Been Revealed... \u00A7c\u00A7kte"));
-                    lore.appendTag(new NBTTagString(""));
-                    lore.appendTag(new NBTTagString("\u00A7c\u00A7kte\u00A74 Sneak + Right-Click to \u00A7lDeactivate Aura! \u00A7c\u00A7kte"));
+                String message = null;
+                if (!texture) {
                     message = "\u00A7c\u00A7kte\u00A74\u00A7l Aura Activated \u00A7c\u00A7kte";
                 }
 
@@ -204,7 +219,7 @@ public class AuraSwordActive extends ItemSword {
                 nbt.setTag("display", display);
 
                 // Send a message to the action bar
-                if (!worldIn.isRemote) {
+                if (!worldIn.isRemote && message != null) {
                     playerIn.sendStatusMessage(new TextComponentString(message), true);
                     return new ActionResult<>(EnumActionResult.PASS, itemStack);
                 }
@@ -309,9 +324,9 @@ public class AuraSwordActive extends ItemSword {
                     playerIn.sendStatusMessage(new TextComponentString(message), true);
                     new ActionResult<>(EnumActionResult.PASS, stack);
                 }
-                playerIn.getCooldownTracker().setCooldown(this, 30);
+                playerIn.getCooldownTracker().setCooldown(this, 60);
             }
-            if (chargeTime < 30) { // 20 ticks = 1 second
+            if ((chargeTime > 10) && (chargeTime < 30)) { // 20 ticks = 1 second
                 Random rand = new Random();
                 // The parameters are: particle type, x, y, z, x speed, y speed, z speed
                 for (int i = 0; i < 100; i++) { // number of particles andrandom velocity generator between -0.5 and 0.5 for each axis
@@ -362,7 +377,7 @@ public class AuraSwordActive extends ItemSword {
                     playerIn.sendStatusMessage(new TextComponentString(message), true);
                     new ActionResult<>(EnumActionResult.PASS, stack);
                 }
-                playerIn.getCooldownTracker().setCooldown(this, 30);
+                playerIn.getCooldownTracker().setCooldown(this, 40);
             }
         }
     }

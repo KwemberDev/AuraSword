@@ -1,9 +1,12 @@
 package AuraSword.client;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.BlockPos;
@@ -63,7 +66,9 @@ public class DamageEntityCrossImpact extends Entity {
                     for (float dz = -blockRange; dz <= blockRange; dz++) {
                         BlockPos pos = new BlockPos(this.posX + dx, this.posY + dy, this.posZ + dz);
                         BlockPos posAbove = pos.up();
-                        if (!this.world.isAirBlock(posAbove)) {
+                        IBlockState state = this.world.getBlockState(pos);
+                        Block block = state.getBlock();
+                        if (!this.world.isAirBlock(posAbove) && block != Blocks.WATER && block != Blocks.LAVA && !block.isPassable(world, pos)) {
                             this.world.createExplosion(sourceentity, this.posX, this.posY, this.posZ, (float) 0, true);
                             this.setDead();
                         }

@@ -1,11 +1,14 @@
 package AuraSword.server;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -83,7 +86,9 @@ public class CustomParticle2 extends Particle {
                         BlockPos pos = new BlockPos(this.posX + dx, this.posY + dy, this.posZ + dz);
                         BlockPos posAbove = pos.up(); // Get the block position above the current block
                         BlockPos posAboveAbove = posAbove.up();
-                        if (!this.world.isAirBlock(pos) && !this.world.isAirBlock(posAboveAbove)) {
+                        IBlockState state = this.world.getBlockState(pos);
+                        Block block = state.getBlock();
+                        if (!this.world.isAirBlock(pos) && !this.world.isAirBlock(posAboveAbove) && block != Blocks.WATER && block != Blocks.LAVA && !block.isPassable(world, pos)) {
                             this.setExpired();
                         }
                     }
