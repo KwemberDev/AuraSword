@@ -202,7 +202,7 @@ public class AuraSwordActive extends ItemSword {
             if (!playerIn.getCooldownTracker().hasCooldown(this) && !playerIn.isPotionActive(AURASHORT) && !playerIn.isPotionActive(AURA)) {
                 playerIn.getCooldownTracker().setCooldown(this, 40);
                 if (!playerIn.isPotionActive(AURA)) {
-                    playerIn.addPotionEffect(new PotionEffect(AURA, 600));
+                    playerIn.addPotionEffect(new PotionEffect(AURA, 2400));
                 }
                 nbt.setBoolean(TEXTURE_KEY, !texture);
 
